@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Eating — DIY Freshness Indicator Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,680;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --petal:#FBF8F1;
+    --paper:#F3EFE3;
+    --ink:#182338;
+    --ink-soft:#4B5670;
+    --fresh:#2B4C9E;
+    --fresh-deep:#16213A;
+    --caution:#35A0DE;
+    --spoiled:#2E9E55;
+    --leaf:#367A56;
+    --leaf-light:#C9E4D3;
+    --line:#DCD5C2;
+    --radius:18px;
+    --shadow:0 18px 40px -22px rgba(22,33,58,.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--petal);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:680;
+    letter-spacing:-.01em;
+    margin:0;
+    color:var(--fresh-deep);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--leaf);
+    font-weight:500;
+  }
+  p{line-height:1.65; color:var(--ink-soft); margin:0 0 1em;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  ::selection{background:var(--caution); color:#fff;}
+
+  /* ===== Texture background ===== */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
+    background-image:radial-gradient(circle at 1px 1px, rgba(22,33,58,.05) 1px, transparent 0);
+    background-size:22px 22px;
+  }
+
+  /* ===== NAV ===== */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(251,248,241,.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto; padding:14px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:680; font-size:1.05rem; color:var(--fresh-deep); white-space:nowrap;}
+  .brand svg{width:26px; height:26px; flex-shrink:0;}
+  .tabs{display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    border:none; background:transparent; padding:9px 14px; border-radius:999px;
+    font-size:.85rem; font-weight:500; color:var(--ink-soft); cursor:pointer;
+    white-space:nowrap; transition:.2s;
+  }
+  .tab-btn:hover{background:var(--paper); color:var(--ink);}
+  .tab-btn.active{background:var(--fresh-deep); color:#fff;}
+  .tab-btn:focus-visible{outline:2px solid var(--caution); outline-offset:2px;}
+
+  section.page{display:none; animation:fadeIn .5s ease;}
+  section.page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){
+    section.page{animation:none;} html{scroll-behavior:auto;}
+  }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    background:linear-gradient(180deg, var(--fresh-deep) 0%, var(--fresh) 62%, var(--caution) 100%);
+    color:#fff; padding:72px 28px 60px;
+  }
+  .hero .wrap{display:grid; grid-template-columns:1.15fr .85fr; gap:48px; align-items:center; position:relative; z-index:2;}
+  .hero .eyebrow{color:#CDE0FF;}
+  .hero h1{color:#fff; font-size:clamp(2.2rem,4.2vw,3.4rem); line-height:1.04; margin:10px 0 16px;}
+  .hero .sub{color:#E7ECFB; font-size:1.08rem; max-width:46ch; margin-bottom:26px;}
+  .hero .sub b{color:#fff;}
+  .pill-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.04em;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    padding:6px 12px; border-radius:999px; color:#fff;
+  }
+  .flowers{position:absolute; inset:0; z-index:1; opacity:.5;}
+
+  /* Simulator card */
+  .sim-card{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22);
+    border-radius:var(--radius); padding:22px; backdrop-filter:blur(6px);
+  }
+  .sim-card h3{color:#fff; font-size:1.05rem; margin-bottom:4px;}
+  .sim-card .cap{color:#D9E1F5; font-size:.82rem; margin-bottom:16px;}
+  .beaker-row{display:flex; align-items:center; gap:20px;}
+  .beaker{width:88px; flex-shrink:0;}
+  .sim-readout{flex:1;}
+  .readout-line{display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:#EAEFFB; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,.18);}
+  .readout-line b{color:#fff; font-weight:600;}
+  .status-tag{
+    display:inline-block; margin-top:10px; padding:5px 12px; border-radius:999px;
+    font-family:'IBM Plex Mono',monospace; font-size:.75rem; font-weight:500;
+  }
+  input[type=range]{
+    width:100%; margin-top:16px; accent-color:#fff; cursor:pointer;
+  }
+
+  /* ===== SECTION SCAFFOLD ===== */
+  .section-head{padding:56px 0 28px; text-align:left;}
+  .section-head h2{font-size:clamp(1.7rem,3vw,2.3rem);}
+  .section-head p{max-width:60ch; margin-top:12px;}
+  .content-block{padding-bottom:64px;}
+
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px; box-shadow:var(--shadow);
+  }
+  .grid{display:grid; gap:20px;}
+  .grid-2{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  .grid-4{grid-template-columns:repeat(4,1fr);}
+  @media (max-width:900px){
+    .hero .wrap{grid-template-columns:1fr;}
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:640px){
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+    .nav-inner{flex-direction:column; align-items:flex-start; gap:10px;}
+  }
+
+  .num-badge{
+    width:34px; height:34px; border-radius:10px; background:var(--fresh-deep); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
+    font-size:.85rem; margin-bottom:14px;
+  }
+  .icon-badge{
+    width:44px; height:44px; border-radius:12px; background:var(--leaf-light);
+    display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+  }
+  .icon-badge svg{width:24px; height:24px; color:var(--leaf);}
+
+  h4{font-family:'Fraunces',serif; font-size:1.05rem; color:var(--fresh-deep); margin:0 0 8px;}
+
+  /* Colour guide chips */
+  .colour-guide{display:flex; gap:14px; flex-wrap:wrap;}
+  .colour-chip{
+    flex:1; min-width:160px; border-radius:16px; padding:20px; color:#fff; position:relative; overflow:hidden;
+  }
+  .colour-chip.fresh{background:linear-gradient(135deg,#2B4C9E,#3E63BE);}
+  .colour-chip.caution{background:linear-gradient(135deg,#35A0DE,#5BB6EA);}
+  .colour-chip.spoiled{background:linear-gradient(135deg,#2E9E55,#4DBB75);}
+  .colour-chip .label{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; opacity:.85;}
+  .colour-chip h4{color:#fff; font-size:1.25rem; margin:6px 0 4px;}
+  .colour-chip p{color:rgba(255,255,255,.88); font-size:.86rem; margin:0;}
+
+  /* Table */
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--line);}
+  th{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);}
+  tr:last-child td{border-bottom:none;}
+
+  /* Flow diagram */
+  .flow{display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:20px 0;}
+  .flow-step{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:12px 16px;
+    font-size:.85rem; text-align:center; min-width:120px; color:var(--ink);
+  }
+  .flow-arrow{color:var(--caution); font-size:1.3rem; padding:0 8px;}
+
+  /* Graphs */
+  .graph-box{background:var(--paper); border-radius:14px; padding:16px;}
+  .graph-box .cap{font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--ink-soft); margin-top:8px; text-align:center;}
+
+  /* Activities */
+  .activity-card{border-left:4px solid var(--leaf);}
+  .activity-card.a2{border-left-color:var(--caution);}
+  .activity-card.a3{border-left-color:var(--spoiled);}
+  .activity-card.a4{border-left-color:var(--fresh);}
+  .dl-btn{
+    display:inline-flex; align-items:center; gap:8px; margin-top:14px;
+    background:var(--fresh-deep); color:#fff; border:none; padding:10px 16px;
+    border-radius:10px; font-size:.85rem; font-weight:500; cursor:pointer; transition:.2s;
+  }
+  .dl-btn:hover{background:var(--leaf);}
+  .dl-btn:focus-visible{outline:2px solid var(--caution); outline-offset:2px;}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--fresh-deep); color:#fff; padding:12px 20px; border-radius:12px;
+    font-size:.85rem; opacity:0; pointer-events:none; transition:.3s; z-index:200; box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* Quiz */
+  .quiz-q{margin-bottom:18px;}
+  .quiz-q p.qtext{color:var(--ink); font-weight:600; margin-bottom:10px;}
+  .quiz-opt{
+    display:block; width:100%; text-align:left; background:var(--paper); border:1px solid var(--line);
+    border-radius:10px; padding:10px 14px; margin-bottom:8px; cursor:pointer; font-size:.88rem; color:var(--ink);
+    transition:.15s;
+  }
+  .quiz-opt:hover{border-color:var(--fresh);}
+  .quiz-opt.correct{background:var(--leaf-light); border-color:var(--leaf); font-weight:600;}
+  .quiz-opt.wrong{background:#FBE2E2; border-color:#C0392B;}
+  #quiz-score{font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--leaf); margin-top:6px;}
+
+  /* STEM wheel */
+  .stem-grid{grid-template-columns:repeat(3,1fr);}
+  .stem-card{text-align:center;}
+  .stem-card .icon-badge{margin:0 auto 12px;}
+
+  /* SDG */
+  .sdg-card{color:#fff; border-radius:16px; padding:22px;}
+  .sdg-2{background:#DDA63A;}
+  .sdg-3{background:#4C9F38;}
+  .sdg-4{background:#C5192D;}
+  .sdg-12{background:#BF8B2E;}
+  .sdg-card .sdg-num{font-family:'Fraunces',serif; font-size:2.2rem; font-weight:680; opacity:.9;}
+  .sdg-card h4{color:#fff;}
+
+  /* About */
+  .about-hero{background:var(--fresh-deep); color:#fff; border-radius:var(--radius); padding:36px;}
+  .about-hero p{color:#D9E1F5;}
+  .contact-form input, .contact-form textarea{
+    width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px;
+    font-family:'Inter',sans-serif; font-size:.9rem; margin-bottom:12px; background:var(--petal); color:var(--ink);
+  }
+  .contact-form label{font-size:.78rem; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); display:block; margin-bottom:5px;}
+
+  /* FAQ */
+  details{
+    background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;
+  }
+  summary{cursor:pointer; font-weight:600; color:var(--fresh-deep); font-size:.94rem;}
+  details p{margin-top:10px;}
+
+  footer{background:var(--fresh-deep); color:#B9C4E0; padding:36px 28px; text-align:center; font-size:.82rem;}
+  footer b{color:#fff;}
+
+  .gallery-tile{
+    aspect-ratio:4/3; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="toast" id="toast">Saved for your outreach kit.</div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c2 2.5 4 5 4 8a4 4 0 1 1-8 0c0-3 2-5.5 4-8Z" fill="#367A56"/><circle cx="12" cy="15" r="1.6" fill="#2E9E55"/></svg>
+      Smart Eating Kit
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-page="home">Home</button>
+      <button class="tab-btn" data-page="guide">User Guide</button>
+      <button class="tab-btn" data-page="science">Scientific Analysis</button>
+      <button class="tab-btn" data-page="activities">Activities</button>
+      <button class="tab-btn" data-page="stem">STEM Learning</button>
+      <button class="tab-btn" data-page="sustain">Sustainability</button>
+      <button class="tab-btn" data-page="about">About</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HOME ================= -->
+<section class="page active" id="home">
+  <div class="hero">
+    <svg class="flowers" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice">
+      <g opacity=".55">
+        <path d="M120 70c30 40 60 80 60 130a60 60 0 1 1-120 0c0-50 30-90 60-130Z" fill="#ffffff" opacity=".08"/>
+        <path d="M1040 30c30 40 60 80 60 130a60 60 0 1 1-120 0c0-50 30-90 60-130Z" fill="#ffffff" opacity=".08"/>
+        <circle cx="950" cy="380" r="90" fill="#ffffff" opacity=".05"/>
+        <circle cx="80" cy="420" r="70" fill="#ffffff" opacity=".06"/>
+      </g>
+    </svg>
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">UniKL MICET · Food Biotechnology Outreach</span>
+        <h1>Smart Eating: DIY Freshness Indicator Kit</h1>
+        <p class="sub">A natural food-freshness detection kit for STEM classrooms. <b>Butterfly pea flower anthocyanin</b>, encapsulated in alginate beads, turns from blue to light blue to green as food releases the volatile amines of spoilage — no electronics, just chemistry you can watch happen.</p>
+        <div class="pill-row">
+          <span class="pill">🔵 Blue = Fresh</span>
+          <span class="pill">🩵 Light Blue = Caution</span>
+          <span class="pill">🟢 Green = Spoiled</span>
+        </div>
+      </div>
+      <div class="sim-card">
+        <h3>Freshness Simulator</h3>
+        <p class="cap">Drag the slider to see how the indicator bead responds as food ages.</p>
+        <div class="beaker-row">
+          <svg class="beaker" id="beakerSvg" viewBox="0 0 90 130">
+            <rect x="10" y="8" width="70" height="14" rx="4" fill="none" stroke="#fff" stroke-width="3"/>
+            <path d="M18 20 L18 100a27 27 0 0 0 54 0 L72 20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+            <path id="liquid" d="M20 60 L20 100a25 25 0 0 0 50 0 L70 60Z" fill="#2B4C9E"/>
+            <circle id="bead1" cx="35" cy="80" r="7" fill="#1F3E86"/>
+            <circle id="bead2" cx="52" cy="90" r="6" fill="#1F3E86"/>
+            <circle id="bead3" cx="44" cy="70" r="5.5" fill="#1F3E86"/>
+          </svg>
+          <div class="sim-readout">
+            <div class="readout-line"><span>Time elapsed</span><b id="rTime">0 hr</b></div>
+            <div class="readout-line"><span>pH level</span><b id="rPh">6.5</b></div>
+            <div class="readout-line"><span>Ammonia (VBN)</span><b id="rAmmonia">Low</b></div>
+            <span class="status-tag" id="rStatus" style="background:#2B4C9E;">FRESH</span>
+          </div>
+        </div>
+        <input type="range" min="0" max="100" value="0" id="simSlider" aria-label="Spoilage time slider">
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap content-block">
+    <div class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>One bead, three colours, one clear answer.</h2>
+      <p>Anthocyanin pigment from butterfly pea flowers is a natural pH indicator. As bacteria break food down, they release ammonia and volatile amines that raise the surrounding pH — and the pigment answers by shifting colour, right on the packaging.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c3 3.5 6 7.5 6 12a6 6 0 1 1-12 0c0-4.5 3-8.5 6-12Z"/></svg></div>
+        <h4>Natural pigment</h4>
+        <p>Sourced from butterfly pea flowers (<i>Clitoria ternatea</i>), a plant already used in food and drinks across the region.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/></svg></div>
+        <h4>Alginate beads</h4>
+        <p>The pigment is trapped inside small alginate gel beads, keeping it stable, visible and easy to attach to packaging.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg></div>
+        <h4>Readable at a glance</h4>
+        <p>No app, no meter — a colour anyone can read, from a home kitchen to a school science fair.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= USER GUIDE ================= -->
+<section class="page" id="guide">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 1</span>
+      <h2>User Guide</h2>
+      <p>Everything you need to run the kit safely, from unboxing to reading your first colour change.</p>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:28px;">
+      <div class="card">
+        <h4>Kit contents</h4>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div><span style="font-size:.88rem;">Anthocyanin alginate beads (x20)</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></div><span style="font-size:.88rem;">Adhesive indicator strips</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></div><span style="font-size:.88rem;">Tweezers & sample tray</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><span style="font-size:.88rem;">Colour reference chart</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6l1 4H8l1-4Z"/><path d="M6 6h12l-1 14H7L6 6Z"/></svg></div><span style="font-size:.88rem;">Observation log sheets</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><div class="icon-badge" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></div><span style="font-size:.88rem;">Gloves & disposal bags</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Safety precautions</h4>
+        <ul style="color:var(--ink-soft); padding-left:18px; line-height:1.8; font-size:.92rem;">
+          <li>Wear gloves when handling raw food samples.</li>
+          <li>Do not taste or consume food used in this experiment.</li>
+          <li>Wash hands after handling spoiled samples.</li>
+          <li>Dispose of samples in the sealed bags provided.</li>
+          <li>Adult supervision recommended for primary school users.</li>
+          <li>Keep beads away from eyes; rinse with water on contact.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-head" style="padding-top:8px;">
+      <span class="eyebrow">Step by step</span>
+      <h2 style="font-size:1.6rem;">Experimental procedure</h2>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:28px;">
+      <div class="card"><div class="num-badge">01</div><h4>Prepare</h4><p style="font-size:.88rem;">Place one indicator bead onto the adhesive strip using the tweezers provided.</p></div>
+      <div class="card"><div class="num-badge">02</div><h4>Attach</h4><p style="font-size:.88rem;">Stick the strip inside the food packaging or beside the sample tray, away from direct contact with food.</p></div>
+      <div class="card"><div class="num-badge">03</div><h4>Observe</h4><p style="font-size:.88rem;">Check the bead colour every few hours and record it against the reference chart.</p></div>
+      <div class="card"><div class="num-badge">04</div><h4>Record</h4><p style="font-size:.88rem;">Log colour, time and any smell observations on the observation sheet.</p></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:28px;">
+      <div class="card">
+        <h4>Observation table</h4>
+        <table>
+          <tr><th>Time (hr)</th><th>Bead colour</th><th>Interpretation</th></tr>
+          <tr><td>0</td><td>Blue</td><td>Fresh</td></tr>
+          <tr><td>6</td><td>Blue</td><td>Fresh</td></tr>
+          <tr><td>12</td><td>Light Blue</td><td>Caution</td></tr>
+          <tr><td>24</td><td>Green</td><td>Spoiled</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Colour interpretation</h4>
+        <div class="colour-guide" style="flex-direction:column;">
+          <div class="colour-chip fresh"><span class="label">Blue</span><h4>Fresh</h4><p>Low pH, minimal bacterial activity — safe to consume.</p></div>
+          <div class="colour-chip caution"><span class="label">Light Blue</span><h4>Caution</h4><p>pH rising — spoilage beginning, consume soon or check further.</p></div>
+          <div class="colour-chip spoiled"><span class="label">Green</span><h4>Spoiled</h4><p>High pH from ammonia release — discard the food.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCIENCE ================= -->
+<section class="page" id="science">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 2</span>
+      <h2>Scientific Analysis</h2>
+      <p>The chemistry and biology behind every colour change — from bacterial growth to the pigment that reveals it.</p>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h4>What causes food spoilage</h4>
+        <p style="font-size:.92rem;">Spoilage begins when bacteria naturally present on food start breaking down proteins and fats. As they multiply, they produce by-products — including ammonia and volatile amines — that change the chemistry of the food's surface.</p>
+        <h4 style="margin-top:16px;">Role of bacteria</h4>
+        <p style="font-size:.92rem;">Species such as <i>Pseudomonas</i> and <i>Enterobacteriaceae</i> thrive on proteins in meat, fish and shrimp, converting them into nitrogen-based compounds as they grow.</p>
+      </div>
+      <div class="card">
+        <h4>Ammonia, amines & pH</h4>
+        <p style="font-size:.92rem;">These volatile amines are alkaline. As they accumulate, the pH around the food rises from a near-neutral or slightly acidic starting point toward the alkaline range — the exact shift the indicator is built to detect.</p>
+        <h4 style="margin-top:16px;">Anthocyanin chemistry</h4>
+        <p style="font-size:.92rem;">Anthocyanins change molecular structure at different pH levels, which changes which wavelengths of light they absorb — and therefore what colour we see.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h4>The spoilage pathway</h4>
+      <div class="flow">
+        <div class="flow-step">Fresh food</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Bacterial growth</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Ammonia released</div><div class="flow-arrow">→</div>
+        <div class="flow-step">pH rises</div><div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:#E1F3E8; border-color:#A5DBB6;">Indicator changes colour</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h4>Butterfly pea flower as a pH indicator</h4>
+        <p style="font-size:.92rem;">Butterfly pea (<i>Clitoria ternatea</i>) is rich in delphinidin-based anthocyanins. It has long been used as a natural food colourant — the same sensitivity to pH that makes it useful in cooking makes it a reliable freshness sensor.</p>
+      </div>
+      <div class="card">
+        <h4>Alginate encapsulation & smart packaging</h4>
+        <p style="font-size:.92rem;">Dropping the pigment extract into a calcium chloride bath forms small alginate gel beads through ionic gelation, locking the pigment in place. Attached to packaging film, this is a simple example of "smart" or "intelligent" packaging that communicates the condition of the food inside.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h4>Try it: interactive colour chart</h4>
+      <p style="font-size:.88rem;">Use the simulator below — the same one from the homepage — to connect pH, time and colour.</p>
+      <div class="beaker-row" style="background:var(--fresh-deep); border-radius:14px; padding:18px; margin-top:12px;">
+        <svg class="beaker" id="beakerSvg2" viewBox="0 0 90 130">
+          <rect x="10" y="8" width="70" height="14" rx="4" fill="none" stroke="#fff" stroke-width="3"/>
+          <path d="M18 20 L18 100a27 27 0 0 0 54 0 L72 20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <path id="liquid2" d="M20 60 L20 100a25 25 0 0 0 50 0 L70 60Z" fill="#2B4C9E"/>
+        </svg>
+        <div class="sim-readout">
+          <div class="readout-line" style="border-color:rgba(255,255,255,.2);"><span style="color:#D9E1F5;">pH level</span><b id="rPh2" style="color:#fff;">6.5</b></div>
+          <input type="range" min="0" max="100" value="0" id="simSlider2" aria-label="pH slider" style="margin-top:10px;">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="graph-box">
+        <svg viewBox="0 0 200 120" width="100%">
+          <polyline points="10,100 60,80 110,45 190,15" fill="none" stroke="#2E9E55" stroke-width="3"/>
+          <line x1="10" y1="110" x2="190" y2="110" stroke="#B9AF95" stroke-width="1"/>
+          <line x1="10" y1="10" x2="10" y2="110" stroke="#B9AF95" stroke-width="1"/>
+        </svg>
+        <p class="cap">pH vs Colour intensity</p>
+      </div>
+      <div class="graph-box">
+        <svg viewBox="0 0 200 120" width="100%">
+          <polyline points="10,20 70,25 120,60 190,105" fill="none" stroke="#2B4C9E" stroke-width="3"/>
+          <line x1="10" y1="110" x2="190" y2="110" stroke="#B9AF95" stroke-width="1"/>
+          <line x1="10" y1="10" x2="10" y2="110" stroke="#B9AF95" stroke-width="1"/>
+        </svg>
+        <p class="cap">Time vs Freshness score</p>
+      </div>
+      <div class="graph-box">
+        <svg viewBox="0 0 200 120" width="100%">
+          <path d="M10,105 C60,105 70,20 190,15" fill="none" stroke="#367A56" stroke-width="3"/>
+          <line x1="10" y1="110" x2="190" y2="110" stroke="#B9AF95" stroke-width="1"/>
+          <line x1="10" y1="10" x2="10" y2="110" stroke="#B9AF95" stroke-width="1"/>
+        </svg>
+        <p class="cap">Bacterial growth curve</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACTIVITIES ================= -->
+<section class="page" id="activities">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 3</span>
+      <h2>Educational Activities</h2>
+      <p>Hands-on exercises for classrooms, science clubs and exhibitions.</p>
+    </div>
+    <div class="grid grid-2" style="margin-bottom:24px;">
+      <div class="card activity-card">
+        <span class="eyebrow">Activity 1</span>
+        <h4>Watch the colour change</h4>
+        <p style="font-size:.9rem;">Attach a bead to a fresh food sample and observe colour changes over 24 hours, logging results every 6 hours.</p>
+        <button class="dl-btn" onclick="showToast('Observation sheet queued for download.')">⬇ Observation Sheet</button>
+      </div>
+      <div class="card activity-card a2">
+        <span class="eyebrow">Activity 2</span>
+        <h4>Compare protein sources</h4>
+        <p style="font-size:.9rem;">Run the same test on chicken, fish and shrimp side by side. Which spoils fastest, and why might that be?</p>
+        <button class="dl-btn" onclick="showToast('Comparison worksheet queued for download.')">⬇ Worksheet</button>
+      </div>
+      <div class="card activity-card a3">
+        <span class="eyebrow">Activity 3</span>
+        <h4>Mystery sample challenge</h4>
+        <p style="font-size:.9rem;">Test an unlabelled food sample and use only the indicator colour to judge whether it's safe to eat.</p>
+        <button class="dl-btn" onclick="showToast('Challenge card queued for download.')">⬇ Challenge Card</button>
+      </div>
+      <div class="card activity-card a4">
+        <span class="eyebrow">Activity 4</span>
+        <h4>Build a packaging prototype</h4>
+        <p style="font-size:.9rem;">Design and build your own smart packaging concept that holds an indicator bead where it's easy to read.</p>
+        <button class="dl-btn" onclick="showToast('Activity book queued for download.')">⬇ Activity Book</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h4>Freshness Quiz</h4>
+      <p style="font-size:.88rem;">Test what you've learned — three quick questions.</p>
+      <div id="quizArea"></div>
+      <div id="quiz-score"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STEM ================= -->
+<section class="page" id="stem">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 4</span>
+      <h2>STEM Learning</h2>
+      <p>One kit, six subjects — the indicator bead is a doorway into every strand of STEM.</p>
+    </div>
+    <div class="grid stem-grid" style="margin-bottom:24px;">
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6L4 20h16L15 8V2"/></svg></div><h4>Chemistry</h4><p style="font-size:.86rem;">Acid–base indicators, pH and molecular structure changes.</p></div>
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/></svg></div><h4>Biology</h4><p style="font-size:.86rem;">Bacterial growth, decomposition and microbial life cycles.</p></div>
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 6h16M4 18h10"/></svg></div><h4>Food Science</h4><p style="font-size:.86rem;">How storage, temperature and time affect food quality.</p></div>
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/><path d="M9 9l6 6"/></svg></div><h4>Biotechnology</h4><p style="font-size:.86rem;">Extracting and encapsulating natural pigments for real-world use.</p></div>
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 12h16"/></svg></div><h4>Sustainable Packaging</h4><p style="font-size:.86rem;">Biodegradable, plant-based materials replacing electronic sensors.</p></div>
+      <div class="card stem-card"><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div><h4>Food Engineering</h4><p style="font-size:.86rem;">Designing a low-cost, scalable device from lab to kitchen.</p></div>
+    </div>
+
+    <div class="card">
+      <h4>pH & anthocyanins, explained visually</h4>
+      <div style="display:flex; gap:6px; align-items:center; margin-top:14px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+          <div style="height:26px; border-radius:999px; background:linear-gradient(90deg,#2B4C9E,#35A0DE,#2E9E55); position:relative;">
+            <div style="position:absolute; left:5%; top:-22px; font-size:.7rem; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);">pH 5</div>
+            <div style="position:absolute; left:48%; top:-22px; font-size:.7rem; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);">pH 7</div>
+            <div style="position:absolute; left:88%; top:-22px; font-size:.7rem; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);">pH 9</div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.85rem; margin-top:22px;">Anthocyanin molecules gain or lose protons as pH shifts, changing their structure — and therefore the colour of light they reflect back to your eye. Acidic environments favour the blue-shifted form; alkaline environments push toward green.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SUSTAINABILITY ================= -->
+<section class="page" id="sustain">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 5</span>
+      <h2>Sustainability</h2>
+      <p>How a bead of pigment connects to four UN Sustainable Development Goals.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="sdg-card sdg-2"><div class="sdg-num">02</div><h4>Zero Hunger</h4><p style="color:rgba(255,255,255,.9); font-size:.85rem;">Reduces food waste by helping households and vendors judge freshness accurately.</p></div>
+      <div class="sdg-card sdg-3"><div class="sdg-num">03</div><h4>Good Health</h4><p style="color:rgba(255,255,255,.9); font-size:.85rem;">Lowers risk of foodborne illness by flagging spoiled food before it's eaten.</p></div>
+      <div class="sdg-card sdg-4"><div class="sdg-num">04</div><h4>Quality Education</h4><p style="color:rgba(255,255,255,.9); font-size:.85rem;">Brings hands-on chemistry and biology into schools with no lab required.</p></div>
+      <div class="sdg-card sdg-12"><div class="sdg-num">12</div><h4>Responsible Consumption</h4><p style="color:rgba(255,255,255,.9); font-size:.85rem;">Uses a natural, biodegradable material instead of electronic sensors.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ABOUT ================= -->
+<section class="page" id="about">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Page 6</span>
+      <h2>About UniKL MICET</h2>
+    </div>
+    <div class="about-hero" style="margin-bottom:24px;">
+      <h3 style="color:#fff; font-size:1.3rem; margin-bottom:10px;">Universiti Kuala Lumpur Malaysian Institute of Chemical and Bioengineering Technology</h3>
+      <p>Our mission is to translate food biotechnology research into tools that communities can actually use — from smart packaging concepts to classroom-ready STEM kits, developed through the Smart Eating Programme and shared through school outreach and public exhibitions.</p>
+    </div>
+    <div class="grid grid-3" style="margin-bottom:24px;">
+      <div class="card"><h4>Food Biotechnology Research</h4><p style="font-size:.88rem;">Applying natural pigments and bio-based materials to everyday food safety problems.</p></div>
+      <div class="card"><h4>Community Engagement</h4><p style="font-size:.88rem;">Workshops and exhibitions bringing science into schools and public spaces.</p></div>
+      <div class="card"><h4>Smart Eating Programme</h4><p style="font-size:.88rem;">The initiative behind this kit, connecting research to everyday kitchens.</p></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h4>Frequently Asked Questions</h4>
+        <details><summary>Is the indicator bead safe to touch?</summary><p>Yes — it's made from food-grade alginate and plant pigment, but it should not be eaten as part of the experiment.</p></details>
+        <details><summary>How long does one bead last?</summary><p>Typically up to 48 hours once exposed to air, depending on humidity and storage.</p></details>
+        <details><summary>Can this replace expiry dates?</summary><p>No — it's an educational and supplementary tool, not a certified food-safety device.</p></details>
+        <details><summary>What age group is this suitable for?</summary><p>Designed for primary and secondary school students, with adult supervision for younger learners.</p></details>
+      </div>
+      <div class="card">
+        <h4>Contact us</h4>
+        <form class="contact-form" onsubmit="event.preventDefault(); showToast('Message sent — thank you!');">
+          <label>Name</label>
+          <input type="text" placeholder="Your name" required>
+          <label>Email</label>
+          <input type="email" placeholder="you@example.com" required>
+          <label>Message</label>
+          <textarea rows="3" placeholder="Tell us about your school or event..."></textarea>
+          <button type="submit" class="dl-btn">Send message</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h4>Image gallery</h4>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="gallery-tile" style="background:linear-gradient(135deg,#2B4C9E,#3E63BE);"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="12" cy="12" r="8"/></svg></div>
+          <div class="gallery-tile" style="background:linear-gradient(135deg,#35A0DE,#5BB6EA);"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><path d="M12 2c3 3.5 6 7.5 6 12a6 6 0 1 1-12 0c0-4.5 3-8.5 6-12Z"/></svg></div>
+          <div class="gallery-tile" style="background:linear-gradient(135deg,#2E9E55,#4DBB75);"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="3"/></svg></div>
+          <div class="gallery-tile" style="background:linear-gradient(135deg,#367A56,#4C9F38);"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><path d="M4 4h16v16H4z"/></svg></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Video demonstration</h4>
+        <div class="gallery-tile" style="background:var(--fresh-deep); margin-top:12px; cursor:pointer;" onclick="showToast('Demo video coming soon.')">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="12" r="11" fill="rgba(255,255,255,.15)"/><path d="M10 8l6 4-6 4V8Z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>QR code section</h4>
+      <p style="font-size:.88rem;">Print these codes onto your packaging prototypes to link straight back to this site.</p>
+      <div class="grid grid-3" style="margin-top:12px;">
+        <div style="text-align:center;">
+          <svg viewBox="0 0 100 100" width="100%" style="max-width:140px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px;">
+            <g fill="#182338">
+              <rect x="5" y="5" width="25" height="25"/><rect x="10" y="10" width="15" height="15" fill="#fff"/><rect x="14" y="14" width="7" height="7"/>
+              <rect x="70" y="5" width="25" height="25"/><rect x="75" y="10" width="15" height="15" fill="#fff"/><rect x="79" y="14" width="7" height="7"/>
+              <rect x="5" y="70" width="25" height="25"/><rect x="10" y="75" width="15" height="15" fill="#fff"/><rect x="14" y="79" width="7" height="7"/>
+              <rect x="40" y="8" width="6" height="6"/><rect x="55" y="8" width="6" height="6"/><rect x="40" y="40" width="6" height="6"/><rect x="55" y="40" width="6" height="6"/><rect x="70" y="40" width="6" height="6"/><rect x="40" y="55" width="6" height="6"/><rect x="55" y="70" width="6" height="6"/><rect x="70" y="55" width="6" height="6"/><rect x="85" y="70" width="6" height="6"/><rect x="40" y="85" width="6" height="6"/><rect x="70" y="85" width="6" height="6"/>
+            </g>
+          </svg>
+          <p class="cap" style="margin-top:6px;">User Guide</p>
+        </div>
+        <div style="text-align:center;">
+          <svg viewBox="0 0 100 100" width="100%" style="max-width:140px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px;">
+            <g fill="#182338">
+              <rect x="5" y="5" width="25" height="25"/><rect x="10" y="10" width="15" height="15" fill="#fff"/><rect x="14" y="14" width="7" height="7"/>
+              <rect x="70" y="5" width="25" height="25"/><rect x="75" y="10" width="15" height="15" fill="#fff"/><rect x="79" y="14" width="7" height="7"/>
+              <rect x="5" y="70" width="25" height="25"/><rect x="10" y="75" width="15" height="15" fill="#fff"/><rect x="14" y="79" width="7" height="7"/>
+              <rect x="45" y="10" width="6" height="6"/><rect x="60" y="15" width="6" height="6"/><rect x="40" y="45" width="6" height="6"/><rect x="55" y="45" width="6" height="6"/><rect x="75" y="45" width="6" height="6"/><rect x="45" y="60" width="6" height="6"/><rect x="60" y="75" width="6" height="6"/><rect x="80" y="60" width="6" height="6"/><rect x="45" y="85" width="6" height="6"/><rect x="65" y="85" width="6" height="6"/>
+            </g>
+          </svg>
+          <p class="cap" style="margin-top:6px;">Scientific Analysis</p>
+        </div>
+        <div style="text-align:center;">
+          <svg viewBox="0 0 100 100" width="100%" style="max-width:140px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px;">
+            <g fill="#182338">
+              <rect x="5" y="5" width="25" height="25"/><rect x="10" y="10" width="15" height="15" fill="#fff"/><rect x="14" y="14" width="7" height="7"/>
+              <rect x="70" y="5" width="25" height="25"/><rect x="75" y="10" width="15" height="15" fill="#fff"/><rect x="79" y="14" width="7" height="7"/>
+              <rect x="5" y="70" width="25" height="25"/><rect x="10" y="75" width="15" height="15" fill="#fff"/><rect x="14" y="79" width="7" height="7"/>
+              <rect x="42" y="20" width="6" height="6"/><rect x="58" y="30" width="6" height="6"/><rect x="42" y="42" width="6" height="6"/><rect x="65" y="42" width="6" height="6"/><rect x="42" y="60" width="6" height="6"/><rect x="80" y="65" width="6" height="6"/><rect x="55" y="65" width="6" height="6"/><rect x="42" y="80" width="6" height="6"/><rect x="65" y="80" width="6" height="6"/>
+            </g>
+          </svg>
+          <p class="cap" style="margin-top:6px;">Activities</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>Smart Eating: DIY Freshness Indicator Kit</b> — a Food Biotechnology outreach project by UniKL MICET.<br>
+  Built for exhibitions, grants and school outreach.
+</footer>
+
+<script>
+  // ---- Tab navigation ----
+  const tabs = document.querySelectorAll('.tab-btn');
+  const pages = document.querySelectorAll('.page');
+  tabs.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      pages.forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.page).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+
+  // ---- Toast ----
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(()=>t.classList.remove('show'),2600);
+  }
+
+  // ---- Colour interpolation helper ----
+  function lerpColor(c1,c2,t){
+    const p1=parseInt(c1.slice(1),16), p2=parseInt(c2.slice(1),16);
+    const r1=(p1>>16)&255, g1=(p1>>8)&255, b1=p1&255;
+    const r2=(p2>>16)&255, g2=(p2>>8)&255, b2=p2&255;
+    const r=Math.round(r1+(r2-r1)*t), g=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
+    return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  function colourAt(t){
+    if(t<50) return lerpColor('#2B4C9E','#35A0DE', t/50);
+    return lerpColor('#35A0DE','#2E9E55', (t-50)/50);
+  }
+
+  // ---- Hero simulator ----
+  const slider = document.getElementById('simSlider');
+  const liquid = document.getElementById('liquid');
+  const beads = ['bead1','bead2','bead3'].map(id=>document.getElementById(id));
+  const rTime = document.getElementById('rTime');
+  const rPh = document.getElementById('rPh');
+  const rAmmonia = document.getElementById('rAmmonia');
+  const rStatus = document.getElementById('rStatus');
+
+  function updateSim(v){
+    const col = colourAt(v);
+    liquid.setAttribute('fill', col);
+    beads.forEach(b=>b.setAttribute('fill', col));
+    rTime.textContent = Math.round(v*0.3) + ' hr';
+    rPh.textContent = (6.4 + v*0.026).toFixed(1);
+    rAmmonia.textContent = v<40?'Low':(v<75?'Rising':'High');
+    let label='FRESH', bg='#2B4C9E';
+    if(v>=75){label='SPOILED'; bg='#2E9E55';}
+    else if(v>=40){label='CAUTION'; bg='#35A0DE';}
+    rStatus.textContent = label;
+    rStatus.style.background = bg;
+  }
+  slider.addEventListener('input', e=>updateSim(+e.target.value));
+  updateSim(0);
+
+  // Second simulator on science page (linked)
+  const slider2 = document.getElementById('simSlider2');
+  const liquid2 = document.getElementById('liquid2');
+  const rPh2 = document.getElementById('rPh2');
+  function updateSim2(v){
+    const col = colourAt(v);
+    liquid2.setAttribute('fill', col);
+    rPh2.textContent = (6.4 + v*0.026).toFixed(1);
+  }
+  slider2.addEventListener('input', e=>updateSim2(+e.target.value));
+  updateSim2(0);
+
+  // ---- Quiz ----
+  const quizData = [
+    {q:"What colour does the indicator turn when food is fresh?", opts:["Blue","Red","Yellow"], correct:0},
+    {q:"What gas do spoilage bacteria release that raises pH?", opts:["Oxygen","Ammonia","Carbon dioxide"], correct:1},
+    {q:"What natural pigment gives the beads their colour?", opts:["Chlorophyll","Beta-carotene","Anthocyanin"], correct:2}
+  ];
+  let score = 0, answered = 0;
+  const quizArea = document.getElementById('quizArea');
+  quizData.forEach((item,qi)=>{
+    const div = document.createElement('div');
+    div.className='quiz-q';
+    const p = document.createElement('p');
+    p.className='qtext';
+    p.textContent = (qi+1)+'. '+item.q;
+    div.appendChild(p);
+    item.opts.forEach((opt,oi)=>{
+      const b = document.createElement('button');
+      b.className='quiz-opt';
+      b.textContent = opt;
+      b.addEventListener('click',()=>{
+        if(b.dataset.locked) return;
+        [...div.querySelectorAll('.quiz-opt')].forEach(x=>x.dataset.locked='1');
+        if(oi===item.correct){ b.classList.add('correct'); score++; }
+        else { b.classList.add('wrong'); div.children[item.correct+1].classList.add('correct'); }
+        answered++;
+        document.getElementById('quiz-score').textContent = `Score: ${score} / ${quizData.length} (${answered}/${quizData.length} answered)`;
+      });
+      div.appendChild(b);
+    });
+    quizArea.appendChild(div);
+  });
+</script>
+</body>
+</html>
